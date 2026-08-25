@@ -334,7 +334,7 @@ body {
   gap: 20px;
   min-height: 0;
   padding: 20px 24px;
-  align-items: flex-start;
+  align-items: stretch;
 }
 
 .sidebar {
@@ -506,8 +506,7 @@ body {
 /* ---------- feed (left box) ---------- */
 
 .feed-card {
-  flex: 0 1 460px;
-  max-height: 460px;
+  flex: 1;
   display: flex;
   flex-direction: column;
   min-width: 0;
@@ -577,39 +576,39 @@ body {
   border-top: 1px solid var(--border-soft);
   background: var(--panel-2);
   border-radius: 0;
-  padding: 7px 12px 8px;
+  padding: 9px 14px 10px;
   flex-shrink: 0;
 }
 
 .composer {
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: 7px;
 }
 
 .composer-did {
   align-self: flex-start;
   font-family: var(--font-mono);
-  font-size: 10.5px;
+  font-size: 11px;
   color: var(--verified);
   background: rgba(79, 209, 197, 0.08);
   border: 1px solid var(--verified-dim);
-  padding: 3px 7px;
+  padding: 4px 8px;
   border-radius: 999px;
   cursor: default;
 }
 
 #composer-input {
   width: 100%;
-  min-height: 34px;
-  max-height: 72px;
+  min-height: 52px;
+  max-height: 110px;
   resize: vertical;
   background: var(--panel-2);
   border: 1px solid var(--border);
   color: var(--text);
   font-family: var(--font-mono);
-  font-size: 11.5px;
-  padding: 6px 8px;
+  font-size: 12px;
+  padding: 8px 10px;
   border-radius: 5px;
   outline: none;
   transition: border-color 0.15s ease;
@@ -620,14 +619,14 @@ body {
 
 .composer-send-btn {
   align-self: flex-end;
-  padding: 5px 10px;
-  font-size: 11.5px;
+  padding: 6px 12px;
+  font-size: 12px;
 }
 
 .composer-status {
-  font-size: 11px;
+  font-size: 12px;
   color: var(--text-dim);
-  min-height: 14px;
+  min-height: 16px;
 }
 
 .composer-status[data-kind="ok"] { color: var(--verified); }
