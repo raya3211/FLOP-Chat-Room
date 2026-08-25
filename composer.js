@@ -84,7 +84,10 @@
 
   sendBtn.addEventListener("click", send);
   input.addEventListener("keydown", (e) => {
-    if (e.key === "Enter") send();
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      send();
+    }
   });
 
   window.addEventListener("technocore:identity-changed", (e) => render(e.detail));
