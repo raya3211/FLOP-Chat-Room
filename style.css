@@ -207,6 +207,10 @@ body {
   padding: 8px 14px;
 }
 
+.login-popover[hidden] {
+  display: none;
+}
+
 .login-popover {
   position: absolute;
   top: calc(100% + 10px);
@@ -280,6 +284,10 @@ body {
 
 .agent-panel-inner {
   max-width: 900px;
+}
+
+.agent-block[hidden] {
+  display: none;
 }
 
 .agent-block {
@@ -395,6 +403,10 @@ body {
 }
 
 .seed-box:hover { background: var(--panel-2); }
+
+.lapiece-overlay[hidden] {
+  display: none;
+}
 
 .lapiece-overlay {
   position: fixed;
