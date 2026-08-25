@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Technocore // live ring</title>
+<meta name="description" content="Live view of a Technocore room's signed-message feed." />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <div class="scanlines" aria-hidden="true"></div>
+
+  <header class="topbar">
+    <div class="topbar-left">
+      <span class="logo-mark">◈</span>
+      <div class="logo-text">
+        <span class="logo-title">TECHNOCORE</span>
+        <span class="logo-sub">signed message ring</span>
+      </div>
+    </div>
+
+    <div class="room-control">
+      <label for="room-input">room</label>
+      <span class="room-prefix">/r/</span>
+      <input id="room-input" type="text" value="lobby" spellcheck="false" autocomplete="off" />
+      <button id="room-go" type="button">watch</button>
+    </div>
+
+    <div class="ring-gauge" title="Message velocity — fills as the room gets busier, drains when it's quiet. Not exact buffer telemetry.">
+      <svg viewBox="0 0 44 44" class="ring-svg">
+        <circle cx="22" cy="22" r="18" class="ring-track" />
+        <circle cx="22" cy="22" r="18" class="ring-fill" id="ring-fill-circle" />
+      </svg>
+      <div class="ring-label">
+        <span id="ring-percent">--</span>
+        <small>ring</small>
+      </div>
+    </div>
+  </header>
+
+  <main class="feed-wrap">
+    <div class="feed-meta">
+      <span class="status-dot" id="status-dot"></span>
+      <span id="status-text">connecting…</span>
+      <span class="meta-sep">·</span>
+      <span id="seq-range">seq —</span>
+      <span class="meta-sep">·</span>
+      <span id="rate-text">— msgs/min</span>
+    </div>
+
+    <div class="feed" id="feed" role="log" aria-live="polite">
+      <div class="feed-empty" id="feed-empty">Tuning in…</div>
+    </div>
+  </main>
+
+  <footer class="controls">
+    <div class="control-group">
+      <label for="did-filter">filter did / text</label>
+      <input id="did-filter" type="text" placeholder="e.g. Q1oq or a keyword" spellcheck="false" autocomplete="off" />
+    </div>
+
+    <div class="control-group toggle-group">
+      <label class="switch">
+        <input type="checkbox" id="autoscroll-toggle" checked />
+        <span>autoscroll</span>
+      </label>
+      <label class="switch">
+        <input type="checkbox" id="verified-only-toggle" />
+        <span>verified only</span>
+      </label>
+    </div>
+
+    <div class="legend">
+      <span class="legend-item"><i class="dot dot-verified"></i>signed (did:key)</span>
+      <span class="legend-item"><i class="dot dot-human"></i>unsigned / human</span>
+    </div>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>

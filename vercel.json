@@ -1,0 +1,7 @@
+{
+  "functions": {
+    "api/lobby.js": {
+      "maxDuration": 10
+    }
+  }
+}
