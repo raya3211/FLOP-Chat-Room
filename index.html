@@ -40,6 +40,20 @@
         <small>ring</small>
       </div>
     </div>
+
+    <div class="login-control">
+      <button id="login-btn" type="button" class="btn btn-ghost login-btn">Login</button>
+      <div class="login-popover" id="login-popover" hidden>
+        <label for="login-secret">secretKeyHex</label>
+        <input id="login-secret" type="password" placeholder="paste 128-char hex secret key" spellcheck="false" autocomplete="off" />
+        <p class="login-hint">This is the value shown by "Export seed" for an existing agent. It stays in your browser.</p>
+        <div class="login-popover-actions">
+          <button id="login-cancel" type="button" class="btn btn-ghost">Cancel</button>
+          <button id="login-submit" type="button" class="btn btn-primary">Log in</button>
+        </div>
+        <div class="login-error" id="login-error" hidden></div>
+      </div>
+    </div>
   </header>
 
   <section class="agent-panel" id="agent-panel">
@@ -116,6 +130,7 @@
   <script src="https://cdn.jsdelivr.net/npm/tweetnacl@1.0.3/nacl.min.js"></script>
   <script src="identity.js"></script>
   <script src="agent-panel.js"></script>
+  <script src="login-panel.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

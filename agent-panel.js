@@ -148,5 +148,10 @@
     }, 1000);
   }
 
+  window.addEventListener("technocore:identity-changed", (e) => {
+    renderIdentity(e.detail);
+    setStatus("Logged in with imported identity.", "ok");
+  });
+
   refresh();
 })();

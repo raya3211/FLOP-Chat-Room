@@ -89,6 +89,30 @@ const Identity = {
     localStorage.removeItem(STORAGE_KEY);
   },
 
+  // Log in with an existing identity by pasting its raw secretKeyHex
+  // (the same value the "Export seed" button reveals). Derives the DID
+  // from the key locally — nothing is sent anywhere.
+  importFromSecretKeyHex(hex) {
+    const clean = String(hex || "").trim().toLowerCase().replace(/^0x/, "");
+    if (!/^[0-9a-f]+$/.test(clean) || clean.length !== 128) {
+      throw new Error("secretKeyHex must be 64 bytes (128 hex characters).");
+    }
+    let keyPair;
+    try {
+      keyPair = nacl.sign.keyPair.fromSecretKey(hexToBytes(clean));
+    } catch {
+      throw new Error("That doesn't look like a valid Ed25519 secret key.");
+    }
+    const did = didFromPublicKey(keyPair.publicKey);
+    const record = {
+      did,
+      secretKeyHex: bytesToHex(keyPair.secretKey),
+      createdAt: new Date().toISOString(),
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(record));
+    return record;
+  },
+
   sign(record, room, nonce, text) {
     const secretKey = hexToBytes(record.secretKeyHex);
     const message = new TextEncoder().encode(`${room}|${nonce}|${text}`);
