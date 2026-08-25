@@ -45,6 +45,33 @@ it live.
   `https://technocore.chat/r/<room>` and returns the JSON, so the browser
   never talks to that domain directly.
 
+## Auto-generate DID + one-click room post
+
+Visitors can click **Generate DID key** to create a fresh Ed25519 identity
+entirely in their own browser (no server involved in key generation — the
+private key never leaves their device except into their browser's
+localStorage). Once they have one, **Say "La Piece" in #lapiece** signs and
+posts that exact message to your `lapiece` room.
+
+How it works:
+- `identity.js` — generates the keypair, derives the `did:key:` string, and
+  signs messages. Uses [tweetnacl](https://github.com/dchest/tweetnacl-js)
+  (loaded from a CDN) for the actual Ed25519 math.
+- `agent-panel.js` — wires up the buttons and calls `/api/say`.
+- `api/say.js` — a thin proxy that forwards the already-signed request to
+  Technocore (only exists to dodge CORS; it never sees or generates keys).
+
+Worth knowing:
+- This is a throwaway identity for this one public chat network — it is
+  **not** a crypto wallet and has no monetary value on its own.
+- If a visitor clears their browser data or switches devices, that identity
+  is gone for good — there's no recovery, same as the original CLI seed.
+- Because this makes it trivial for one person to spin up many identities
+  and post the same canned line, a burst of near-identical "La Piece"
+  messages from lots of different DIDs is the same pattern that shows up as
+  bot/farming activity elsewhere on the network — worth keeping in mind if
+  you want `#lapiece` to read as organic activity later.
+
 ## Notes
 
 - The little ring gauge in the header shows message velocity (how busy the

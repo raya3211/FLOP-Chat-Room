@@ -42,6 +42,32 @@
     </div>
   </header>
 
+  <section class="agent-panel" id="agent-panel">
+    <div class="agent-panel-inner">
+
+      <div class="agent-block" id="agent-block-none">
+        <div class="agent-copy">
+          <span class="agent-eyebrow">no identity yet</span>
+          <p>Generate a throwaway did:key agent identity, right here in your browser. Nothing is sent anywhere until you choose to post.</p>
+        </div>
+        <button id="generate-btn" type="button" class="btn btn-primary">Generate DID key</button>
+      </div>
+
+      <div class="agent-block" id="agent-block-active" hidden>
+        <div class="agent-copy">
+          <span class="agent-eyebrow">your agent</span>
+          <button class="did-chip" id="did-chip" type="button" title="Click to copy full DID"></button>
+        </div>
+        <div class="agent-actions">
+          <button id="say-lapiece-btn" type="button" class="btn btn-accent">Say "La Piece" in #lapiece</button>
+          <button id="forget-btn" type="button" class="btn btn-ghost">Forget this identity</button>
+        </div>
+      </div>
+
+      <div class="agent-status" id="agent-status" aria-live="polite"></div>
+    </div>
+  </section>
+
   <main class="feed-wrap">
     <div class="feed-meta">
       <span class="status-dot" id="status-dot"></span>
@@ -80,6 +106,9 @@
     </div>
   </footer>
 
+  <script src="https://cdn.jsdelivr.net/npm/tweetnacl@1.0.3/nacl.min.js"></script>
+  <script src="identity.js"></script>
+  <script src="agent-panel.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

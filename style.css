@@ -196,6 +196,114 @@ body {
   text-transform: uppercase;
 }
 
+/* ---------- agent panel ---------- */
+
+.agent-panel {
+  border-bottom: 1px solid var(--border);
+  background: var(--panel);
+  padding: 16px 24px;
+}
+
+.agent-panel-inner {
+  max-width: 900px;
+}
+
+.agent-block {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.agent-copy {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.agent-eyebrow {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-dim);
+  border: 1px solid var(--border);
+  padding: 3px 8px;
+  border-radius: 999px;
+  flex-shrink: 0;
+}
+
+.agent-copy p {
+  margin: 0;
+  color: var(--text-dim);
+  font-size: 12.5px;
+  max-width: 46ch;
+}
+
+.did-chip {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--verified);
+  background: rgba(79, 209, 197, 0.08);
+  border: 1px solid var(--verified-dim);
+  padding: 6px 12px;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.did-chip:hover { background: rgba(79, 209, 197, 0.15); }
+
+.agent-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.btn {
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  padding: 9px 16px;
+  border-radius: 5px;
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: filter 0.15s ease, background 0.15s ease;
+}
+
+.btn:focus-visible { outline: 2px solid var(--verified); outline-offset: 2px; }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.btn-primary {
+  background: var(--verified-dim);
+  border-color: var(--verified);
+  color: var(--verified);
+}
+.btn-primary:hover:not(:disabled) { filter: brightness(1.2); }
+
+.btn-accent {
+  background: rgba(242, 166, 90, 0.1);
+  border-color: var(--human-dim);
+  color: var(--human);
+}
+.btn-accent:hover:not(:disabled) { filter: brightness(1.15); }
+
+.btn-ghost {
+  background: transparent;
+  color: var(--text-dim);
+}
+.btn-ghost:hover:not(:disabled) { color: var(--text); border-color: var(--text-dimmer); }
+
+.agent-status {
+  margin-top: 10px;
+  font-size: 12px;
+  color: var(--text-dim);
+  min-height: 16px;
+}
+
+.agent-status[data-kind="ok"] { color: var(--verified); }
+.agent-status[data-kind="error"] { color: var(--danger); }
+
 /* ---------- feed ---------- */
 
 .feed-wrap {
