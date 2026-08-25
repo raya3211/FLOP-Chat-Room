@@ -102,17 +102,12 @@ body {
   letter-spacing: 0.03em;
 }
 
-.room-control {
+.room-switcher {
   display: flex;
   align-items: center;
-  gap: 6px;
-  margin-left: auto;
+  gap: 5px;
+  position: relative;
   color: var(--text-dim);
-  font-size: 12px;
-}
-
-.room-control label {
-  display: none;
 }
 
 .room-prefix {
@@ -124,10 +119,10 @@ body {
   border: 1px solid var(--border);
   color: var(--text);
   font-family: var(--font-mono);
-  font-size: 13px;
-  padding: 7px 10px;
+  font-size: 12px;
+  padding: 5px 8px;
   border-radius: 4px;
-  width: 120px;
+  width: 96px;
   outline: none;
   transition: border-color 0.15s ease;
 }
@@ -136,20 +131,74 @@ body {
   border-color: var(--verified);
 }
 
-#room-go {
+#room-go,
+#room-dropdown-btn {
   background: var(--panel-2);
   border: 1px solid var(--border);
   color: var(--verified);
   font-family: var(--font-mono);
-  font-size: 12px;
-  padding: 7px 12px;
+  font-size: 11.5px;
+  padding: 5px 9px;
   border-radius: 4px;
   cursor: pointer;
   transition: background 0.15s ease, border-color 0.15s ease;
 }
 
-#room-go:hover { border-color: var(--verified); background: var(--verified-dim); }
-#room-go:focus-visible { outline: 2px solid var(--verified); outline-offset: 2px; }
+#room-go:hover,
+#room-dropdown-btn:hover { border-color: var(--verified); background: var(--verified-dim); }
+#room-go:focus-visible,
+#room-dropdown-btn:focus-visible { outline: 2px solid var(--verified); outline-offset: 2px; }
+
+#room-dropdown-btn {
+  padding: 5px 7px;
+  font-size: 10px;
+}
+
+#room-dropdown-btn[aria-expanded="true"] {
+  border-color: var(--verified);
+  background: var(--verified-dim);
+}
+
+.room-dropdown[hidden] { display: none; }
+
+.room-dropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  min-width: 140px;
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 5px;
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.45);
+}
+
+.room-option {
+  background: transparent;
+  border: none;
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  text-align: left;
+  padding: 7px 9px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.room-option:hover,
+.room-option:focus-visible { background: var(--verified-dim); color: var(--verified); outline: none; }
+
+.room-option.active {
+  color: var(--verified);
+}
+
+.room-option.active::before {
+  content: "● ";
+}
 
 /* ring gauge — the signature element. reflects the room's ring-buffer fill. */
 
@@ -468,6 +517,7 @@ body {
 .feed-meta {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 8px;
   padding: 14px 18px;
   color: var(--text-dim);
@@ -516,13 +566,14 @@ body {
   font-size: 13px;
 }
 
-/* ---------- composer (sidebar box 2) ---------- */
+/* ---------- composer (below chat history, inside feed-card) ---------- */
 
 .composer-card {
-  border: 1px solid var(--border);
-  background: var(--panel);
-  border-radius: 8px;
-  padding: 16px;
+  border: none;
+  border-top: 1px solid var(--border-soft);
+  background: var(--panel-2);
+  border-radius: 0;
+  padding: 14px 18px;
   flex-shrink: 0;
 }
 

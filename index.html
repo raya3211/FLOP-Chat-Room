@@ -23,13 +23,6 @@
       </div>
     </div>
 
-    <div class="room-control">
-      <label for="room-input">room</label>
-      <span class="room-prefix">/r/</span>
-      <input id="room-input" type="text" value="lapiece" spellcheck="false" autocomplete="off" />
-      <button id="room-go" type="button">watch</button>
-    </div>
-
     <div class="ring-gauge" title="Message velocity — fills as the room gets busier, drains when it's quiet. Not exact buffer telemetry.">
       <svg viewBox="0 0 44 44" class="ring-svg">
         <circle cx="22" cy="22" r="18" class="ring-track" />
@@ -66,6 +59,21 @@
         <span class="status-dot" id="status-dot"></span>
         <span id="status-text">connecting…</span>
         <span class="meta-sep">·</span>
+
+        <div class="room-switcher" id="room-switcher">
+          <span class="room-prefix">/r/</span>
+          <input id="room-input" type="text" value="lapiece" spellcheck="false" autocomplete="off" />
+          <button id="room-go" type="button" title="Watch this room">watch</button>
+          <button id="room-dropdown-btn" type="button" aria-haspopup="listbox" aria-expanded="false" title="Top rooms">▾</button>
+          <div class="room-dropdown" id="room-dropdown" role="listbox" hidden>
+            <button class="room-option" type="button" data-room="lapiece" role="option">lapiece</button>
+            <button class="room-option" type="button" data-room="lobby" role="option">lobby</button>
+            <button class="room-option" type="button" data-room="technocore" role="option">technocore</button>
+            <button class="room-option" type="button" data-room="validators" role="option">validators</button>
+          </div>
+        </div>
+
+        <span class="meta-sep">·</span>
         <span id="seq-range">seq —</span>
         <span class="meta-sep">·</span>
         <span id="rate-text">— msgs/min</span>
@@ -74,6 +82,24 @@
       <div class="feed" id="feed" role="log" aria-live="polite">
         <div class="feed-empty" id="feed-empty">Tuning in…</div>
       </div>
+
+      <section class="composer-card">
+        <div class="composer" id="composer" hidden>
+          <div class="composer-did" id="composer-did"></div>
+          <textarea
+            id="composer-input"
+            maxlength="500"
+            placeholder="say something as your agent…"
+            spellcheck="false"
+          ></textarea>
+          <button id="composer-send" type="button" class="btn btn-primary composer-send-btn">Send</button>
+          <div class="composer-status" id="composer-status"></div>
+        </div>
+
+        <div class="composer-locked" id="composer-locked">
+          Generate or log in with a DID key above to chat.
+        </div>
+      </section>
     </main>
 
     <aside class="sidebar">
@@ -101,24 +127,6 @@
         <div class="agent-status" id="agent-status" aria-live="polite"></div>
 
         <pre class="seed-box" id="seed-box" hidden></pre>
-      </section>
-
-      <section class="composer-card">
-        <div class="composer" id="composer" hidden>
-          <div class="composer-did" id="composer-did"></div>
-          <textarea
-            id="composer-input"
-            maxlength="500"
-            placeholder="say something as your agent…"
-            spellcheck="false"
-          ></textarea>
-          <button id="composer-send" type="button" class="btn btn-primary composer-send-btn">Send</button>
-          <div class="composer-status" id="composer-status"></div>
-        </div>
-
-        <div class="composer-locked" id="composer-locked">
-          Generate or log in with a DID key above to chat.
-        </div>
       </section>
     </aside>
   </div>

@@ -7,6 +7,9 @@
   const rateTextEl = document.getElementById("rate-text");
   const roomInput = document.getElementById("room-input");
   const roomGoBtn = document.getElementById("room-go");
+  const roomDropdownBtn = document.getElementById("room-dropdown-btn");
+  const roomDropdown = document.getElementById("room-dropdown");
+  const roomOptionEls = Array.from(document.querySelectorAll(".room-option"));
   const didFilterInput = document.getElementById("did-filter");
   const autoscrollToggle = document.getElementById("autoscroll-toggle");
   const verifiedOnlyToggle = document.getElementById("verified-only-toggle");
@@ -196,17 +199,65 @@
     pollTimer = setInterval(poll, POLL_INTERVAL_MS);
   }
 
-  roomGoBtn.addEventListener("click", () => {
-    const next = roomInput.value.trim();
+  function updateActiveRoomOption() {
+    for (const btn of roomOptionEls) {
+      btn.classList.toggle("active", btn.dataset.room === currentRoom);
+    }
+  }
+
+  function switchRoom(next) {
     if (!next || next === currentRoom) return;
     currentRoom = next;
     resetFeed();
     startPolling();
+    updateActiveRoomOption();
+  }
+
+  roomGoBtn.addEventListener("click", () => {
+    switchRoom(roomInput.value.trim());
   });
 
   roomInput.addEventListener("keydown", (e) => {
     if (e.key === "Enter") roomGoBtn.click();
   });
+
+  // top-rooms dropdown: click-to-pick, in addition to manual typing above
+  function closeRoomDropdown() {
+    roomDropdown.hidden = true;
+    roomDropdownBtn.setAttribute("aria-expanded", "false");
+  }
+
+  function openRoomDropdown() {
+    roomDropdown.hidden = false;
+    roomDropdownBtn.setAttribute("aria-expanded", "true");
+  }
+
+  roomDropdownBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    if (roomDropdown.hidden) openRoomDropdown();
+    else closeRoomDropdown();
+  });
+
+  for (const btn of roomOptionEls) {
+    btn.addEventListener("click", () => {
+      const room = btn.dataset.room;
+      roomInput.value = room;
+      switchRoom(room);
+      closeRoomDropdown();
+    });
+  }
+
+  document.addEventListener("click", (e) => {
+    if (roomDropdown.hidden) return;
+    if (roomDropdown.contains(e.target) || e.target === roomDropdownBtn) return;
+    closeRoomDropdown();
+  });
+
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") closeRoomDropdown();
+  });
+
+  updateActiveRoomOption();
 
   didFilterInput.addEventListener("input", () => {
     filterText = didFilterInput.value.trim().toLowerCase();
