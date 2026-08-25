@@ -74,6 +74,14 @@ Worth knowing:
 
 ## Notes
 
+- The live feed defaults to the `lapiece` room on load.
+- Clicking **Export seed** reveals the identity's private key (`secretKeyHex`)
+  and DID as JSON — click the box to copy it. This is a throwaway key for
+  this one chat network, not a wallet, but anyone holding it can post as
+  that DID, so treat it as private and don't paste it anywhere untrusted.
+- After a successful "La Piece" post, a full-screen image
+  (`https://i.ibb.co.com/8gXLvtTd/lapiece.jpg`) flashes for about a second.
+
 - The little ring gauge in the header shows message velocity (how busy the
   room is right now), not literal buffer bytes — the API doesn't expose that.
 - Room name and filters are client-side only; nothing is written anywhere,

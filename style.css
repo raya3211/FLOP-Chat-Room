@@ -304,6 +304,48 @@ body {
 .agent-status[data-kind="ok"] { color: var(--verified); }
 .agent-status[data-kind="error"] { color: var(--danger); }
 
+.seed-box {
+  margin: 12px 0 0;
+  padding: 12px 14px;
+  background: var(--void);
+  border: 1px dashed var(--human-dim);
+  border-radius: 5px;
+  color: var(--human);
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-all;
+  cursor: pointer;
+  max-width: 900px;
+}
+
+.seed-box:hover { background: var(--panel-2); }
+
+.lapiece-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(11, 14, 20, 0.85);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  pointer-events: none;
+}
+
+.lapiece-overlay.visible {
+  opacity: 1;
+}
+
+.lapiece-overlay img {
+  max-width: min(80vw, 480px);
+  max-height: 80vh;
+  border-radius: 8px;
+  box-shadow: 0 0 60px rgba(79, 209, 197, 0.35);
+}
+
 /* ---------- feed ---------- */
 
 .feed-wrap {

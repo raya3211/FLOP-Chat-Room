@@ -17,7 +17,7 @@
   const MAX_ROWS_IN_DOM = 400;
   const POLL_INTERVAL_MS = 2500;
 
-  let currentRoom = roomInput.value.trim() || "lobby";
+  let currentRoom = roomInput.value.trim() || "lapiece";
   let sinceSeq = null;
   let pollTimer = null;
   let inFlight = false;

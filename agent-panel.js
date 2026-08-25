@@ -6,9 +6,12 @@
   const blockActive = document.getElementById("agent-block-active");
   const generateBtn = document.getElementById("generate-btn");
   const sayBtn = document.getElementById("say-lapiece-btn");
+  const exportBtn = document.getElementById("export-btn");
   const forgetBtn = document.getElementById("forget-btn");
   const didChip = document.getElementById("did-chip");
   const statusEl = document.getElementById("agent-status");
+  const seedBox = document.getElementById("seed-box");
+  const overlay = document.getElementById("lapiece-overlay");
 
   let nonceCounter = 0;
 
@@ -55,8 +58,28 @@
   forgetBtn.addEventListener("click", () => {
     if (!confirm("Forget this identity? You won't be able to post as this DID again.")) return;
     window.TechnocoreIdentity.clear();
+    seedBox.hidden = true;
     refresh();
     setStatus("Identity forgotten.", "");
+  });
+
+  exportBtn.addEventListener("click", () => {
+    const record = window.TechnocoreIdentity.load();
+    if (!record) return;
+
+    if (!seedBox.hidden) {
+      seedBox.hidden = true;
+      return;
+    }
+
+    const exportData = {
+      did: record.did,
+      secretKeyHex: record.secretKeyHex,
+      createdAt: record.createdAt,
+      note: "Throwaway Technocore did:key identity — not a crypto wallet. Keep this private; anyone with secretKeyHex can post as this DID.",
+    };
+    seedBox.textContent = JSON.stringify(exportData, null, 2);
+    seedBox.hidden = false;
   });
 
   didChip.addEventListener("click", async () => {
@@ -66,6 +89,15 @@
       setStatus("DID copied to clipboard.", "ok");
     } catch {
       setStatus(full, "");
+    }
+  });
+
+  seedBox.addEventListener("click", async () => {
+    try {
+      await navigator.clipboard.writeText(seedBox.textContent);
+      setStatus("Seed copied to clipboard. Keep it private — don't paste it anywhere else.", "ok");
+    } catch {
+      setStatus("Couldn't auto-copy — select the text above manually.", "");
     }
   });
 
@@ -97,12 +129,24 @@
         throw new Error(body || `HTTP ${res.status}`);
       }
       setStatus(`Posted to #${LA_PIECE_ROOM}.`, "ok");
+      showLaPieceOverlay();
     } catch (err) {
       setStatus(`Couldn't post: ${err.message || err}`, "error");
     } finally {
       sayBtn.disabled = false;
     }
   });
+
+  function showLaPieceOverlay() {
+    overlay.hidden = false;
+    overlay.classList.add("visible");
+    setTimeout(() => {
+      overlay.classList.remove("visible");
+      setTimeout(() => {
+        overlay.hidden = true;
+      }, 200); // let the fade-out transition finish before hiding
+    }, 1000);
+  }
 
   refresh();
 })();

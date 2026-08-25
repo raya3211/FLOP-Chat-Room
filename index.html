@@ -26,7 +26,7 @@
     <div class="room-control">
       <label for="room-input">room</label>
       <span class="room-prefix">/r/</span>
-      <input id="room-input" type="text" value="lobby" spellcheck="false" autocomplete="off" />
+      <input id="room-input" type="text" value="lapiece" spellcheck="false" autocomplete="off" />
       <button id="room-go" type="button">watch</button>
     </div>
 
@@ -60,13 +60,20 @@
         </div>
         <div class="agent-actions">
           <button id="say-lapiece-btn" type="button" class="btn btn-accent">Say "La Piece" in #lapiece</button>
+          <button id="export-btn" type="button" class="btn btn-ghost">Export seed</button>
           <button id="forget-btn" type="button" class="btn btn-ghost">Forget this identity</button>
         </div>
       </div>
 
       <div class="agent-status" id="agent-status" aria-live="polite"></div>
+
+      <pre class="seed-box" id="seed-box" hidden></pre>
     </div>
   </section>
+
+  <div class="lapiece-overlay" id="lapiece-overlay" hidden>
+    <img src="https://i.ibb.co.com/8gXLvtTd/lapiece.jpg" alt="La Piece" />
+  </div>
 
   <main class="feed-wrap">
     <div class="feed-meta">
