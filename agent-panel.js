@@ -53,6 +53,9 @@
       "New identity generated in this browser. It's a throwaway key for this chat network only — not a crypto wallet.",
       "ok"
     );
+    window.dispatchEvent(
+      new CustomEvent("technocore:identity-changed", { detail: record })
+    );
   });
 
   forgetBtn.addEventListener("click", () => {
@@ -61,6 +64,7 @@
     seedBox.hidden = true;
     refresh();
     setStatus("Identity forgotten.", "");
+    window.dispatchEvent(new CustomEvent("technocore:identity-cleared"));
   });
 
   exportBtn.addEventListener("click", () => {

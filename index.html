@@ -102,6 +102,26 @@
     <div class="feed" id="feed" role="log" aria-live="polite">
       <div class="feed-empty" id="feed-empty">Tuning in…</div>
     </div>
+
+    <div class="composer" id="composer" hidden>
+      <div class="composer-row">
+        <span class="composer-did" id="composer-did"></span>
+        <input
+          id="composer-input"
+          type="text"
+          maxlength="500"
+          placeholder="say something as your agent…"
+          spellcheck="false"
+          autocomplete="off"
+        />
+        <button id="composer-send" type="button" class="btn btn-primary">Send</button>
+      </div>
+      <div class="composer-status" id="composer-status"></div>
+    </div>
+
+    <div class="composer-locked" id="composer-locked">
+      Generate or log in with a DID key above to chat.
+    </div>
   </main>
 
   <footer class="controls">
@@ -131,6 +151,7 @@
   <script src="identity.js"></script>
   <script src="agent-panel.js"></script>
   <script src="login-panel.js"></script>
+  <script src="composer.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
