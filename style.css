@@ -249,11 +249,13 @@ body {
 
 .login-control {
   position: relative;
+  width: 100%;
 }
 
 .login-btn {
+  width: 100%;
   font-size: 12px;
-  padding: 8px 14px;
+  padding: 7px 12px;
 }
 
 .login-popover[hidden] {
@@ -262,8 +264,9 @@ body {
 
 .login-popover {
   position: absolute;
-  top: calc(100% + 10px);
-  right: 0;
+  top: calc(100% + 8px);
+  left: 0;
+  right: auto;
   width: 280px;
   background: var(--panel-2);
   border: 1px solid var(--border);
@@ -573,38 +576,39 @@ body {
   border-top: 1px solid var(--border-soft);
   background: var(--panel-2);
   border-radius: 0;
-  padding: 14px 18px;
+  padding: 9px 14px 10px;
   flex-shrink: 0;
 }
 
 .composer {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 7px;
 }
 
 .composer-did {
   align-self: flex-start;
   font-family: var(--font-mono);
-  font-size: 12px;
+  font-size: 11px;
   color: var(--verified);
   background: rgba(79, 209, 197, 0.08);
   border: 1px solid var(--verified-dim);
-  padding: 6px 10px;
+  padding: 4px 8px;
   border-radius: 999px;
   cursor: default;
 }
 
 #composer-input {
   width: 100%;
-  min-height: 72px;
+  min-height: 52px;
+  max-height: 110px;
   resize: vertical;
   background: var(--panel-2);
   border: 1px solid var(--border);
   color: var(--text);
   font-family: var(--font-mono);
-  font-size: 13px;
-  padding: 10px 12px;
+  font-size: 12px;
+  padding: 8px 10px;
   border-radius: 5px;
   outline: none;
   transition: border-color 0.15s ease;
@@ -615,6 +619,8 @@ body {
 
 .composer-send-btn {
   align-self: flex-end;
+  padding: 6px 12px;
+  font-size: 12px;
 }
 
 .composer-status {
