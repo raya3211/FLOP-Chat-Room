@@ -132,6 +132,7 @@ body {
 }
 
 #room-go,
+#room-add-btn,
 #room-dropdown-btn {
   background: var(--panel-2);
   border: 1px solid var(--border);
@@ -145,9 +146,24 @@ body {
 }
 
 #room-go:hover,
+#room-add-btn:hover,
 #room-dropdown-btn:hover { border-color: var(--verified); background: var(--verified-dim); }
 #room-go:focus-visible,
+#room-add-btn:focus-visible,
 #room-dropdown-btn:focus-visible { outline: 2px solid var(--verified); outline-offset: 2px; }
+
+#room-add-btn {
+  padding: 5px 8px;
+  font-weight: 700;
+}
+
+#room-add-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+  border-color: var(--border);
+  background: var(--panel-2);
+}
+#room-add-btn:disabled:hover { background: var(--panel-2); border-color: var(--border); }
 
 #room-dropdown-btn {
   padding: 5px 7px;
@@ -198,6 +214,49 @@ body {
 
 .room-option.active::before {
   content: "● ";
+}
+
+.room-dropdown-divider {
+  height: 1px;
+  background: var(--border);
+  margin: 4px 2px;
+}
+
+.room-dropdown-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-dimmer);
+  padding: 2px 9px 4px;
+}
+
+.room-added-row {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.room-added-row .room-option {
+  flex: 1;
+}
+
+.room-remove-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-dimmer);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 1;
+  padding: 6px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.room-remove-btn:hover,
+.room-remove-btn:focus-visible {
+  color: #f2a65a;
+  background: var(--verified-dim);
+  outline: none;
 }
 
 /* ring gauge — the signature element. reflects the room's ring-buffer fill. */

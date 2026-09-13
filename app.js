@@ -7,9 +7,14 @@
   const rateTextEl = document.getElementById("rate-text");
   const roomInput = document.getElementById("room-input");
   const roomGoBtn = document.getElementById("room-go");
+  const roomAddBtn = document.getElementById("room-add-btn");
   const roomDropdownBtn = document.getElementById("room-dropdown-btn");
   const roomDropdown = document.getElementById("room-dropdown");
-  const roomOptionEls = Array.from(document.querySelectorAll(".room-option"));
+  const roomAddedList = document.getElementById("room-added-list");
+  const roomAddedDivider = document.getElementById("room-added-divider");
+  const roomAddedLabel = document.getElementById("room-added-label");
+  const roomAddedCount = document.getElementById("room-added-count");
+  const roomOptionEls = () => Array.from(document.querySelectorAll(".room-option"));
   const didFilterInput = document.getElementById("did-filter");
   const autoscrollToggle = document.getElementById("autoscroll-toggle");
   const verifiedOnlyToggle = document.getElementById("verified-only-toggle");
@@ -19,6 +24,10 @@
   const RING_CIRCUMFERENCE = 113; // 2 * PI * r(18), matches the SVG stroke-dasharray
   const MAX_ROWS_IN_DOM = 400;
   const POLL_INTERVAL_MS = 2500;
+  const DEFAULT_ROOMS = ["lapiece", "lobby", "technocore", "validators"];
+  const ADDED_ROOMS_KEY = "technocore-added-rooms";
+  const MAX_ADDED_ROOMS = 5;
+  const ROOM_NAME_RE = /^[a-z0-9_-]{1,32}$/i;
 
   let currentRoom = roomInput.value.trim() || "lapiece";
   let sinceSeq = null;
@@ -28,6 +37,93 @@
   let recentTimestamps = []; // for msgs/min calc
   let filterText = "";
   let verifiedOnly = false;
+
+  // ---- saved/added rooms (localStorage, capped at MAX_ADDED_ROOMS) ----
+
+  function loadAddedRooms() {
+    try {
+      const raw = JSON.parse(localStorage.getItem(ADDED_ROOMS_KEY));
+      if (!Array.isArray(raw)) return [];
+      return raw.filter((r) => typeof r === "string" && ROOM_NAME_RE.test(r));
+    } catch {
+      return [];
+    }
+  }
+
+  function persistAddedRooms() {
+    try {
+      localStorage.setItem(ADDED_ROOMS_KEY, JSON.stringify(addedRooms));
+    } catch {
+      // localStorage unavailable (private mode, quota, etc.) — fail silently
+    }
+  }
+
+  let addedRooms = loadAddedRooms();
+
+  function renderAddedRooms() {
+    roomAddedList.innerHTML = "";
+
+    for (const room of addedRooms) {
+      const rowEl = document.createElement("div");
+      rowEl.className = "room-added-row";
+
+      const optBtn = document.createElement("button");
+      optBtn.type = "button";
+      optBtn.className = "room-option";
+      optBtn.dataset.room = room;
+      optBtn.setAttribute("role", "option");
+      optBtn.textContent = room;
+      optBtn.classList.toggle("active", room === currentRoom);
+      optBtn.addEventListener("click", () => {
+        roomInput.value = room;
+        switchRoom(room);
+        closeRoomDropdown();
+      });
+
+      const removeBtn = document.createElement("button");
+      removeBtn.type = "button";
+      removeBtn.className = "room-remove-btn";
+      removeBtn.title = `Remove #${room} from saved`;
+      removeBtn.setAttribute("aria-label", `Remove #${room} from saved`);
+      removeBtn.textContent = "×";
+      removeBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        addedRooms = addedRooms.filter((r) => r !== room);
+        persistAddedRooms();
+        renderAddedRooms();
+      });
+
+      rowEl.appendChild(optBtn);
+      rowEl.appendChild(removeBtn);
+      roomAddedList.appendChild(rowEl);
+    }
+
+    const hasAdded = addedRooms.length > 0;
+    roomAddedDivider.hidden = !hasAdded;
+    roomAddedLabel.hidden = !hasAdded;
+    roomAddedCount.textContent = String(addedRooms.length);
+    updateAddButtonState();
+  }
+
+  function updateAddButtonState() {
+    const room = roomInput.value.trim();
+    const alreadyKnown =
+      !room || DEFAULT_ROOMS.includes(room) || addedRooms.includes(room);
+    const isFull = addedRooms.length >= MAX_ADDED_ROOMS;
+    roomAddBtn.disabled = alreadyKnown || isFull;
+    roomAddBtn.title = isFull
+      ? "Saved room limit reached (5) — remove one first"
+      : "Save this room (max 5)";
+  }
+
+  function addRoom(room) {
+    if (!room || !ROOM_NAME_RE.test(room)) return;
+    if (DEFAULT_ROOMS.includes(room) || addedRooms.includes(room)) return;
+    if (addedRooms.length >= MAX_ADDED_ROOMS) return;
+    addedRooms.push(room);
+    persistAddedRooms();
+    renderAddedRooms();
+  }
 
   function shortId(from) {
     if (typeof from !== "string") return { label: "?", verified: false };
@@ -200,9 +296,10 @@
   }
 
   function updateActiveRoomOption() {
-    for (const btn of roomOptionEls) {
+    for (const btn of roomOptionEls()) {
       btn.classList.toggle("active", btn.dataset.room === currentRoom);
     }
+    updateAddButtonState();
   }
 
   function switchRoom(next) {
@@ -238,7 +335,7 @@
     else closeRoomDropdown();
   });
 
-  for (const btn of roomOptionEls) {
+  for (const btn of roomOptionEls()) {
     btn.addEventListener("click", () => {
       const room = btn.dataset.room;
       roomInput.value = room;
@@ -246,6 +343,12 @@
       closeRoomDropdown();
     });
   }
+
+  roomAddBtn.addEventListener("click", () => {
+    addRoom(roomInput.value.trim());
+  });
+
+  roomInput.addEventListener("input", updateAddButtonState);
 
   document.addEventListener("click", (e) => {
     if (roomDropdown.hidden) return;
@@ -257,6 +360,7 @@
     if (e.key === "Escape") closeRoomDropdown();
   });
 
+  renderAddedRooms();
   updateActiveRoomOption();
 
   didFilterInput.addEventListener("input", () => {

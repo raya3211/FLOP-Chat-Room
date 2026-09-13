@@ -51,12 +51,16 @@
           <span class="room-prefix">/r/</span>
           <input id="room-input" type="text" value="lapiece" spellcheck="false" autocomplete="off" />
           <button id="room-go" type="button" title="Watch this room">watch</button>
+          <button id="room-add-btn" type="button" title="Save this room (max 5)">+</button>
           <button id="room-dropdown-btn" type="button" aria-haspopup="listbox" aria-expanded="false" title="Top rooms">▾</button>
           <div class="room-dropdown" id="room-dropdown" role="listbox" hidden>
             <button class="room-option" type="button" data-room="lapiece" role="option">lapiece</button>
             <button class="room-option" type="button" data-room="lobby" role="option">lobby</button>
             <button class="room-option" type="button" data-room="technocore" role="option">technocore</button>
             <button class="room-option" type="button" data-room="validators" role="option">validators</button>
+            <div class="room-dropdown-divider" id="room-added-divider" hidden></div>
+            <div class="room-dropdown-label" id="room-added-label" hidden>saved (<span id="room-added-count">0</span>/5)</div>
+            <div id="room-added-list"></div>
           </div>
         </div>
 
