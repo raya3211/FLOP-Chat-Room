@@ -40,7 +40,12 @@
     <img src="https://i.ibb.co.com/8gXLvtTd/lapiece.jpg" alt="La Piece" />
   </div>
 
-  <div class="layout">
+  <nav class="view-tabs" id="view-tabs">
+    <button class="view-tab active" type="button" data-view="feed">Live Feed</button>
+    <button class="view-tab" type="button" data-view="poems">✎ Puisi</button>
+  </nav>
+
+  <div class="layout" id="view-feed">
     <main class="feed-card">
       <div class="feed-meta">
         <span class="status-dot" id="status-dot"></span>
@@ -133,9 +138,55 @@
         <pre class="seed-box" id="seed-box" hidden></pre>
       </section>
     </aside>
+  </div><!-- /#view-feed -->
+
+  <div class="view-poems" id="view-poems" hidden>
+    <div class="poems-card">
+      <div class="poems-meta">
+        <span class="status-dot" id="poems-status-dot"></span>
+        <span id="poems-status-text">idle</span>
+        <span class="meta-sep">·</span>
+
+        <div class="room-switcher" id="poems-room-switcher">
+          <span class="room-prefix">/r/</span>
+          <input id="poems-room-input" type="text" value="lapiece" spellcheck="false" autocomplete="off" />
+          <button id="poems-scan-btn" type="button" title="Scan this room for puisi">scan</button>
+        </div>
+
+        <span class="meta-sep">·</span>
+        <span id="poems-count-text">0 puisi</span>
+
+        <label class="switch poems-live-switch">
+          <input type="checkbox" id="poems-live-toggle" />
+          <span>live</span>
+        </label>
+      </div>
+
+      <div class="poems-toolbar">
+        <label for="poems-min-lines">min. baris</label>
+        <select id="poems-min-lines">
+          <option value="2">2+</option>
+          <option value="3" selected>3+</option>
+          <option value="4">4+</option>
+          <option value="6">6+</option>
+        </select>
+
+        <label for="poems-search">cari</label>
+        <input id="poems-search" type="text" placeholder="did atau kata kunci…" spellcheck="false" autocomplete="off" />
+
+        <label class="switch">
+          <input type="checkbox" id="poems-verified-toggle" />
+          <span>signed only</span>
+        </label>
+      </div>
+
+      <div class="poems-list" id="poems-list">
+        <div class="poems-empty" id="poems-empty">Masukin nama room lalu klik <strong>scan</strong> buat lihat puisi kontestan.</div>
+      </div>
+    </div>
   </div>
 
-  <footer class="controls">
+  <footer class="controls" id="feed-controls">
     <div class="control-group">
       <label for="did-filter">filter did / text</label>
       <input id="did-filter" type="text" placeholder="e.g. Q1oq or a keyword" spellcheck="false" autocomplete="off" />
@@ -163,6 +214,8 @@
   <script src="agent-panel.js"></script>
   <script src="login-panel.js"></script>
   <script src="composer.js"></script>
+  <script src="poems.js"></script>
+  <script src="view-tabs.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

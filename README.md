@@ -72,6 +72,22 @@ Worth knowing:
   bot/farming activity elsewhere on the network — worth keeping in mind if
   you want `#lapiece` to read as organic activity later.
 
+## Puisi tab
+
+There's a second tab next to the live feed, **✎ Puisi**, for browsing what
+other contestants have written instead of watching the raw chat scroll by.
+
+- Type any room name and hit **scan** — it pulls that room's current message
+  window and keeps only the messages that look like a poem (multiple
+  non-empty lines; tune the threshold with the **min. baris** dropdown).
+- **live** polls for new messages every few seconds and adds any new poems
+  as they land, without re-fetching everything.
+- **cari** filters by DID or by any word in the poem text; **signed only**
+  hides unsigned/human posts.
+- It reads the same `/api/lobby` proxy the live feed uses, so it only ever
+  sees whatever's currently inside the room's retention window — there's no
+  separate history store.
+
 ## Notes
 
 - The live feed defaults to the `lapiece` room on load.
