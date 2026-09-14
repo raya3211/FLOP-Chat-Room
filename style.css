@@ -19,6 +19,12 @@
 
 * { box-sizing: border-box; }
 
+/* Always honor the `hidden` attribute, even on elements (like .layout and
+   .view-poems) that also set their own `display` — without this, our own
+   `display: flex` rules win over the browser's default `[hidden]{display:none}`
+   and the "hidden" panel stays visible/stacked on top of the active one. */
+[hidden] { display: none !important; }
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
