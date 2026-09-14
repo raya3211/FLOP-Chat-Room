@@ -86,7 +86,11 @@
     if (!obj || typeof obj !== "object") return null;
 
     if (obj.type === "sonnet.receipt.v1") {
-      return { kind: "receipt" };
+      return {
+        kind: "receipt",
+        requestId: typeof obj.request_id === "string" ? obj.request_id : null,
+        status: typeof obj.status === "string" ? obj.status : null,
+      };
     }
     if (obj.type === "sonnet.word.v1" && typeof obj.word === "string") {
       const gameKey = [obj.contest_id, obj.game_id, obj.poem_room]
@@ -96,6 +100,7 @@
         kind: "word",
         word: obj.word,
         version: typeof obj.version === "number" ? obj.version : null,
+        requestId: typeof obj.request_id === "string" ? obj.request_id : null,
         gameKey,
       };
     }
@@ -104,12 +109,34 @@
 
   // Group the turn-based word-game messages into one reconstructed poem per
   // game, ordered by each move's `version` (falling back to arrival order).
+  // Only words the referee actually confirmed (a matching sonnet.receipt.v1
+  // with status "accepted", matched by request_id) count — a word that was
+  // sent but never got an accepted receipt back isn't part of the poem yet.
   function buildStructuredPoems(messages) {
+    const receiptByRequestId = new Map(); // request_id -> status
+
+    messages.forEach((msg) => {
+      const parsed = tryParseStructured(msg);
+      if (parsed && parsed.kind === "receipt" && parsed.requestId) {
+        receiptByRequestId.set(parsed.requestId, parsed.status);
+      }
+    });
+
     const games = new Map(); // gameKey -> [{ word, version, msg, idx }]
+    let pendingCount = 0;
 
     messages.forEach((msg, idx) => {
       const parsed = tryParseStructured(msg);
       if (!parsed || parsed.kind !== "word") return;
+
+      const status = parsed.requestId
+        ? receiptByRequestId.get(parsed.requestId)
+        : undefined;
+      if (status !== "accepted") {
+        pendingCount += 1;
+        return; // not confirmed by the referee (yet, or rejected) — skip
+      }
+
       if (!games.has(parsed.gameKey)) games.set(parsed.gameKey, []);
       games.get(parsed.gameKey).push({
         word: parsed.word,
@@ -152,6 +179,9 @@
     }
 
     poems.sort((a, b) => a.lastIdx - b.lastIdx);
+    // pendingCount is global across all games in this batch — good enough
+    // for a single status hint, since most rooms only run one game at a time.
+    for (const poem of poems) poem.pendingCount = pendingCount;
     return poems;
   }
 
@@ -344,7 +374,8 @@
 
     const words = document.createElement("span");
     words.className = "poem-lines";
-    words.textContent = `${poem.entries.length} kata · ${poem.contributors.length} penulis`;
+    const pendingSuffix = poem.pendingCount ? ` · ${poem.pendingCount} nunggu ACK` : "";
+    words.textContent = `${poem.entries.length} kata · ${poem.contributors.length} penulis${pendingSuffix}`;
 
     header.appendChild(gameBadge);
     header.appendChild(time);
