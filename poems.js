@@ -410,58 +410,73 @@
   function addMessages(messages) {
     if (!messages.length) return;
     allMessages.push(...messages);
-    if (allMessages.length > 4000) {
-      allMessages = allMessages.slice(allMessages.length - 4000);
+    if (allMessages.length > 20000) {
+      allMessages = allMessages.slice(allMessages.length - 20000);
     }
   }
 
-  const DEEP_SCAN_MAX_PAGES = 40; // 40 * 200 = up to 8000 messages of history
-
-  // Pull everything the room still has, not just the most recent 200: page
-  // forward from seq 0 until a page comes back short (caught up to the live
-  // edge) or empty (room has nothing further). Ephemeral rooms still expire
-  // old messages server-side, so this is "as much history as still exists",
-  // not a guaranteed-complete archive.
-  async function deepScanRoom(room) {
-    let cursor = 0;
-    let collected = [];
-    let pages = 0;
-
-    while (pages < DEEP_SCAN_MAX_PAGES) {
-      pages += 1;
-      setStatus(`scanning… (${collected.length} pesan terkumpul)`, "");
-
-      const params = new URLSearchParams({
-        room,
-        limit: "200",
-        since: String(cursor),
-      });
-      const res = await fetch(`/api/lobby?${params.toString()}`);
-      if (!res.ok) throw new Error(`upstream ${res.status}`);
-      const data = await res.json();
-
-      const messages = Array.isArray(data.messages) ? data.messages : [];
-      if (!messages.length) break;
-
-      collected.push(...messages);
-
-      const nextCursor = data.last_seq;
-      if (typeof nextCursor !== "number" || nextCursor <= cursor) break;
-      cursor = nextCursor;
-
-      if (messages.length < 200) break; // fewer than a full page = caught up
+  // Parse the byte-exact JSONL the /export endpoint returns: one JSON
+  // record per line (seq, ts, from, text, nonce, sig — no wrapping object).
+  function parseJsonl(raw) {
+    const out = [];
+    for (const line of raw.split("\n")) {
+      const trimmed = line.trim();
+      if (!trimmed) continue;
+      try {
+        out.push(JSON.parse(trimmed));
+      } catch {
+        // one bad line shouldn't sink the whole scan
+      }
     }
+    return out;
+  }
 
-    return { messages: collected, lastSeq: cursor };
+  // The real "scan everything" path: /r/<room>/export gives a snapshot of
+  // the room's whole currently-retained ring in one shot. Unlike /r/<room>
+  // with since=/limit= — which always answers with the newest `limit`
+  // messages after the cursor, not the next ones (flop-labs/technocore-chat#721)
+  // — this doesn't silently skip a big backlog.
+  async function exportScanRoom(room) {
+    const res = await fetch(`/api/export?room=${encodeURIComponent(room)}`);
+    if (!res.ok) throw new Error(`upstream ${res.status}`);
+    const raw = await res.text();
+    const records = parseJsonl(raw);
+    let lastSeq = null;
+    for (const r of records) {
+      if (typeof r.seq === "number" && (lastSeq === null || r.seq > lastSeq)) {
+        lastSeq = r.seq;
+      }
+    }
+    return { messages: records, lastSeq };
+  }
+
+  // Fallback when /export isn't reachable: a single window of the most
+  // recent messages via the regular polling endpoint. Better than nothing,
+  // but — per the same caveat above — can't reliably backfill a large
+  // existing backlog, only what fits in one page.
+  async function windowScanRoom(room) {
+    const params = new URLSearchParams({ room, limit: "200" });
+    const res = await fetch(`/api/lobby?${params.toString()}`);
+    if (!res.ok) throw new Error(`upstream ${res.status}`);
+    const data = await res.json();
+    const messages = Array.isArray(data.messages) ? data.messages : [];
+    return { messages, lastSeq: data.last_seq ?? null };
   }
 
   async function scanRoomFromStart(room) {
     if (inFlight) return;
     inFlight = true;
+    setStatus("scanning (full export)…", "");
     try {
-      const { messages, lastSeq } = await deepScanRoom(room);
-      allMessages = messages;
-      sinceSeq = lastSeq;
+      let result;
+      try {
+        result = await exportScanRoom(room);
+      } catch (exportErr) {
+        setStatus("export gagal, coba window terbaru…", "");
+        result = await windowScanRoom(room);
+      }
+      allMessages = result.messages;
+      sinceSeq = result.lastSeq;
       hasScannedOnce = true;
       setStatus("live", "live");
       renderList();

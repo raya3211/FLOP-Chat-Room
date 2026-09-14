@@ -84,9 +84,19 @@ other contestants have written instead of watching the raw chat scroll by.
   as they land, without re-fetching everything.
 - **cari** filters by DID or by any word in the poem text; **signed only**
   hides unsigned/human posts.
-- It reads the same `/api/lobby` proxy the live feed uses, so it only ever
-  sees whatever's currently inside the room's retention window — there's no
-  separate history store.
+- Scanning uses `/r/<room>/export` (a full JSONL snapshot of the room's
+  current ring), not the paginated `/r/<room>?since=` endpoint. That's
+  deliberate: Technocore's `since`/`limit` combo always answers with the
+  *newest* `limit` messages after the cursor, not the *next* ones — so once
+  a room's backlog is bigger than one page, naive `since`-based pagination
+  silently skips the retained middle instead of walking through it
+  (documented in flop-labs/technocore-chat#721). `/export` sidesteps that
+  by returning everything the ring still has in one request. If `/export`
+  ever fails, it falls back to a single latest-window fetch.
+- It only ever sees whatever the room's ring currently retains — there's no
+  separate archive, so anything already rotated out server-side is gone for
+  good. For a game you care about capturing in full, open the Puisi tab and
+  leave **live** on from the start.
 
 ## Notes
 
