@@ -558,6 +558,32 @@ body {
   flex-wrap: wrap;
 }
 
+.poem-card--structured {
+  border-color: var(--human-dim);
+}
+
+.poem-game-badge {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  color: var(--human);
+  background: rgba(242, 166, 90, 0.08);
+  border: 1px solid var(--human-dim);
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+
+.poem-contributors {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.poem-contributors .row-id {
+  font-size: 10.5px;
+  padding: 1px 7px;
+}
+
 .poem-time {
   font-size: 11px;
   color: var(--text-dimmer);

@@ -69,6 +69,101 @@
       .filter((line) => line.trim() !== "").length;
   }
 
+  // Some rooms aren't freeform chat — they're a turn-based word game where
+  // each message is a JSON move (`sonnet.word.v1`, one word per turn) plus
+  // server ack messages (`sonnet.receipt.v1`) that carry no poem content.
+  // Detect that shape so we can reconstruct the actual poem text instead of
+  // showing raw JSON grouped by author.
+  function tryParseStructured(msg) {
+    const raw = String(msg.text ?? "").trim();
+    if (!raw.startsWith("{")) return null;
+    let obj;
+    try {
+      obj = JSON.parse(raw);
+    } catch {
+      return null;
+    }
+    if (!obj || typeof obj !== "object") return null;
+
+    if (obj.type === "sonnet.receipt.v1") {
+      return { kind: "receipt" };
+    }
+    if (obj.type === "sonnet.word.v1" && typeof obj.word === "string") {
+      const gameKey = [obj.contest_id, obj.game_id, obj.poem_room]
+        .filter(Boolean)
+        .join("/") || currentRoom;
+      return {
+        kind: "word",
+        word: obj.word,
+        version: typeof obj.version === "number" ? obj.version : null,
+        gameKey,
+      };
+    }
+    return null;
+  }
+
+  // Group the turn-based word-game messages into one reconstructed poem per
+  // game, ordered by each move's `version` (falling back to arrival order).
+  function buildStructuredPoems(messages) {
+    const games = new Map(); // gameKey -> [{ word, version, msg, idx }]
+
+    messages.forEach((msg, idx) => {
+      const parsed = tryParseStructured(msg);
+      if (!parsed || parsed.kind !== "word") return;
+      if (!games.has(parsed.gameKey)) games.set(parsed.gameKey, []);
+      games.get(parsed.gameKey).push({
+        word: parsed.word,
+        version: parsed.version,
+        msg,
+        idx,
+      });
+    });
+
+    const poems = [];
+    for (const [gameKey, entries] of games.entries()) {
+      entries.sort((a, b) => {
+        if (a.version !== null && b.version !== null && a.version !== b.version) {
+          return a.version - b.version;
+        }
+        return a.idx - b.idx;
+      });
+
+      const contributors = [];
+      const seenDid = new Set();
+      for (const e of entries) {
+        const meta = shortId(e.msg.from);
+        if (!seenDid.has(meta.full || meta.label)) {
+          seenDid.add(meta.full || meta.label);
+          contributors.push(meta);
+        }
+      }
+
+      poems.push({
+        structured: true,
+        gameKey,
+        entries,
+        contributors,
+        text: entries.map((e) => e.word).join(" "),
+        firstIdx: entries[0].idx,
+        lastIdx: entries[entries.length - 1].idx,
+        firstTs: entries[0].msg.ts,
+        lastTs: entries[entries.length - 1].msg.ts,
+      });
+    }
+
+    poems.sort((a, b) => a.lastIdx - b.lastIdx);
+    return poems;
+  }
+
+  // Everything that isn't a recognized structured-game message — regular
+  // chat text, fed into the old same-author/time-gap grouping.
+  function nonStructuredMessages(messages) {
+    return messages.filter((msg) => {
+      const parsed = tryParseStructured(msg);
+      return !parsed; // drop both "word" (handled separately) and "receipt" (noise)
+    });
+  }
+
   function setStatus(text, kind) {
     statusText.textContent = text;
     statusDot.className = `status-dot${kind ? ` ${kind}` : ""}`;
@@ -156,64 +251,141 @@
   function renderList() {
     listEl.innerHTML = "";
 
-    const poems = groupIntoPoems(allMessages, currentGapMs());
-    // newest first
-    poems.reverse();
+    const structuredPoems = buildStructuredPoems(allMessages);
+    const freeformPoems = groupIntoPoems(
+      nonStructuredMessages(allMessages),
+      currentGapMs()
+    );
+    freeformPoems.reverse();
 
     let shown = 0;
 
-    for (const run of poems) {
+    // structured (word-game) poems first — newest game activity on top
+    const structuredSorted = [...structuredPoems].reverse();
+    for (const poem of structuredSorted) {
+      if (!structuredMatchesFilters(poem)) continue;
+      shown += 1;
+      if (shown > MAX_POEMS) break;
+      listEl.appendChild(renderStructuredCard(poem));
+    }
+
+    for (const run of freeformPoems) {
       const meta = shortId(run[0].msg.from);
       if (!matchesFilters(run, meta)) continue;
       shown += 1;
       if (shown > MAX_POEMS) break;
-
-      const card = document.createElement("article");
-      card.className = "poem-card";
-
-      const header = document.createElement("div");
-      header.className = "poem-header";
-
-      const badge = document.createElement("span");
-      badge.className = `row-id ${meta.verified ? "verified" : "human"}`;
-      badge.innerHTML = `<span class="tick"></span>${escapeHtml(meta.label)}`;
-      badge.title = meta.full;
-
-      const time = document.createElement("span");
-      time.className = "poem-time";
-      const startTime = formatTime(run[0].msg.ts);
-      const endTime = formatTime(run[run.length - 1].msg.ts);
-      time.textContent = run.length > 1 ? `${startTime}–${endTime}` : startTime;
-
-      const lines = document.createElement("span");
-      lines.className = "poem-lines";
-      const lc = poemLineCount(run);
-      lines.textContent =
-        run.length > 1 ? `${lc} baris · ${run.length} pesan` : `${lc} baris`;
-
-      header.appendChild(badge);
-      header.appendChild(time);
-      header.appendChild(lines);
-
-      const body = document.createElement("div");
-      body.className = "poem-body";
-      body.textContent = poemText(run);
-
-      card.appendChild(header);
-      card.appendChild(body);
-      listEl.appendChild(card);
+      listEl.appendChild(renderFreeformCard(run, meta));
     }
 
     emptyEl.hidden = shown > 0;
     if (shown === 0) {
       emptyEl.hidden = false;
       emptyEl.innerHTML = hasScannedOnce
-        ? `Belum ada puisi (≥ ${currentMinLines()} baris) yang cocok di <strong>#${escapeHtml(currentRoom)}</strong> saat ini. Coba turunin "min. baris" atau naikin "gabung jeda" kalau puisinya dikirim baris-per-baris.`
+        ? `Belum ada puisi yang cocok di <strong>#${escapeHtml(currentRoom)}</strong> saat ini — baik puisi bebas (≥ ${currentMinLines()} baris) maupun game kata bergiliran. Coba turunin "min. baris", naikin "gabung jeda", atau tunggu "live" nangkep giliran berikutnya.`
         : `Masukin nama room lalu klik <strong>scan</strong> buat lihat puisi kontestan.`;
       listEl.appendChild(emptyEl);
     }
 
     countText.textContent = `${shown} puisi`;
+  }
+
+  function structuredMatchesFilters(poem) {
+    const q = searchInput.value.trim().toLowerCase();
+    if (q) {
+      const inText = poem.text.toLowerCase().includes(q);
+      const inContrib = poem.contributors.some((c) =>
+        c.label.toLowerCase().includes(q)
+      );
+      if (!inText && !inContrib) return false;
+    }
+    if (verifiedToggle.checked) {
+      const anyVerified = poem.contributors.some((c) => c.verified);
+      if (!anyVerified) return false;
+    }
+    return true;
+  }
+
+  function renderStructuredCard(poem) {
+    const card = document.createElement("article");
+    card.className = "poem-card poem-card--structured";
+
+    const header = document.createElement("div");
+    header.className = "poem-header";
+
+    const gameBadge = document.createElement("span");
+    gameBadge.className = "poem-game-badge";
+    gameBadge.textContent = poem.gameKey;
+    gameBadge.title = "kunci game (contest/game/room)";
+
+    const time = document.createElement("span");
+    time.className = "poem-time";
+    const startTime = formatTime(poem.firstTs);
+    const endTime = formatTime(poem.lastTs);
+    time.textContent = `${startTime}–${endTime}`;
+
+    const words = document.createElement("span");
+    words.className = "poem-lines";
+    words.textContent = `${poem.entries.length} kata · ${poem.contributors.length} penulis`;
+
+    header.appendChild(gameBadge);
+    header.appendChild(time);
+    header.appendChild(words);
+
+    const contribRow = document.createElement("div");
+    contribRow.className = "poem-contributors";
+    for (const c of poem.contributors) {
+      const chip = document.createElement("span");
+      chip.className = `row-id ${c.verified ? "verified" : "human"}`;
+      chip.innerHTML = `<span class="tick"></span>${escapeHtml(c.label)}`;
+      chip.title = c.full;
+      contribRow.appendChild(chip);
+    }
+
+    const body = document.createElement("div");
+    body.className = "poem-body";
+    body.textContent = poem.text;
+
+    card.appendChild(header);
+    card.appendChild(contribRow);
+    card.appendChild(body);
+    return card;
+  }
+
+  function renderFreeformCard(run, meta) {
+    const card = document.createElement("article");
+    card.className = "poem-card";
+
+    const header = document.createElement("div");
+    header.className = "poem-header";
+
+    const badge = document.createElement("span");
+    badge.className = `row-id ${meta.verified ? "verified" : "human"}`;
+    badge.innerHTML = `<span class="tick"></span>${escapeHtml(meta.label)}`;
+    badge.title = meta.full;
+
+    const time = document.createElement("span");
+    time.className = "poem-time";
+    const startTime = formatTime(run[0].msg.ts);
+    const endTime = formatTime(run[run.length - 1].msg.ts);
+    time.textContent = run.length > 1 ? `${startTime}–${endTime}` : startTime;
+
+    const lines = document.createElement("span");
+    lines.className = "poem-lines";
+    const lc = poemLineCount(run);
+    lines.textContent =
+      run.length > 1 ? `${lc} baris · ${run.length} pesan` : `${lc} baris`;
+
+    header.appendChild(badge);
+    header.appendChild(time);
+    header.appendChild(lines);
+
+    const body = document.createElement("div");
+    body.className = "poem-body";
+    body.textContent = poemText(run);
+
+    card.appendChild(header);
+    card.appendChild(body);
+    return card;
   }
 
   function addMessages(messages) {
