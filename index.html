@@ -171,6 +171,15 @@
           <option value="6">6+</option>
         </select>
 
+        <label for="poems-gap" title="Gabungin beberapa pesan beruntun dari DID yang sama jadi satu puisi, selama jedanya di bawah nilai ini.">gabung jeda</label>
+        <select id="poems-gap">
+          <option value="0">off (1 pesan)</option>
+          <option value="15000">15 dtk</option>
+          <option value="30000">30 dtk</option>
+          <option value="60000" selected>60 dtk</option>
+          <option value="120000">120 dtk</option>
+        </select>
+
         <label for="poems-search">cari</label>
         <input id="poems-search" type="text" placeholder="did atau kata kunci…" spellcheck="false" autocomplete="off" />
 

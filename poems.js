@@ -6,6 +6,7 @@
   const countText = document.getElementById("poems-count-text");
   const liveToggle = document.getElementById("poems-live-toggle");
   const minLinesSelect = document.getElementById("poems-min-lines");
+  const gapSelect = document.getElementById("poems-gap");
   const searchInput = document.getElementById("poems-search");
   const verifiedToggle = document.getElementById("poems-verified-toggle");
   const listEl = document.getElementById("poems-list");
@@ -20,9 +21,9 @@
   let liveTimer = null;
   let hasScannedOnce = false;
 
-  // every message seen in this room so far, oldest first — re-filtered
-  // locally whenever the min-lines/search/verified controls change, so we
-  // don't have to re-hit the network just to loosen or tighten the filter.
+  // every message seen in this room so far, oldest first — re-grouped and
+  // re-filtered locally whenever the controls change, so loosening/tightening
+  // a filter doesn't need another network round-trip.
   let allMessages = [];
 
   function shortId(from) {
@@ -57,6 +58,11 @@
     }
   }
 
+  function tsMillis(ts) {
+    const n = new Date(ts).getTime();
+    return Number.isFinite(n) ? n : null;
+  }
+
   function lineCount(text) {
     return String(text ?? "")
       .split("\n")
@@ -72,13 +78,76 @@
     return Number(minLinesSelect.value) || 3;
   }
 
-  function matchesFilters(msg, meta) {
-    if (lineCount(msg.text) < currentMinLines()) return false;
+  function currentGapMs() {
+    return Number(gapSelect.value) || 0;
+  }
+
+  // Group messages into "poems". Many contestants post a poem line-by-line
+  // as separate messages rather than one message with embedded newlines, so
+  // a poem here is: a maximal run of that author's own messages where each
+  // consecutive pair is within `gapMs` of each other (other people's
+  // messages interleaved in between don't break the run). If gapMs is 0,
+  // every message stands alone (only genuinely multi-line single messages
+  // will pass the min-lines filter).
+  function groupIntoPoems(messages, gapMs) {
+    const byAuthor = new Map();
+    messages.forEach((msg, idx) => {
+      const key = typeof msg.from === "string" ? msg.from : `?${idx}`;
+      if (!byAuthor.has(key)) byAuthor.set(key, []);
+      byAuthor.get(key).push({ msg, idx });
+    });
+
+    const poems = [];
+
+    for (const entries of byAuthor.values()) {
+      let run = [];
+      let lastTs = null;
+
+      const flush = () => {
+        if (run.length) poems.push(run);
+        run = [];
+        lastTs = null;
+      };
+
+      for (const entry of entries) {
+        const ts = tsMillis(entry.msg.ts);
+        if (
+          gapMs > 0 &&
+          run.length &&
+          lastTs !== null &&
+          ts !== null &&
+          ts - lastTs <= gapMs
+        ) {
+          run.push(entry);
+        } else {
+          flush();
+          run.push(entry);
+        }
+        lastTs = ts !== null ? ts : lastTs;
+      }
+      flush();
+    }
+
+    // chronological by the first message in each run
+    poems.sort((a, b) => a[0].idx - b[0].idx);
+    return poems;
+  }
+
+  function poemText(run) {
+    return run.map((e) => String(e.msg.text ?? "")).join("\n");
+  }
+
+  function poemLineCount(run) {
+    return run.reduce((sum, e) => sum + Math.max(1, lineCount(e.msg.text)), 0);
+  }
+
+  function matchesFilters(run, meta) {
+    if (poemLineCount(run) < currentMinLines()) return false;
     if (verifiedToggle.checked && !meta.verified) return false;
     const q = searchInput.value.trim().toLowerCase();
     if (q) {
       const inLabel = meta.label.toLowerCase().includes(q);
-      const inText = String(msg.text ?? "").toLowerCase().includes(q);
+      const inText = poemText(run).toLowerCase().includes(q);
       if (!inLabel && !inText) return false;
     }
     return true;
@@ -87,13 +156,15 @@
   function renderList() {
     listEl.innerHTML = "";
 
-    // newest first, so the latest submissions surface at the top
-    const ordered = [...allMessages].reverse();
+    const poems = groupIntoPoems(allMessages, currentGapMs());
+    // newest first
+    poems.reverse();
+
     let shown = 0;
 
-    for (const msg of ordered) {
-      const meta = shortId(msg.from);
-      if (!matchesFilters(msg, meta)) continue;
+    for (const run of poems) {
+      const meta = shortId(run[0].msg.from);
+      if (!matchesFilters(run, meta)) continue;
       shown += 1;
       if (shown > MAX_POEMS) break;
 
@@ -110,11 +181,15 @@
 
       const time = document.createElement("span");
       time.className = "poem-time";
-      time.textContent = formatTime(msg.ts);
+      const startTime = formatTime(run[0].msg.ts);
+      const endTime = formatTime(run[run.length - 1].msg.ts);
+      time.textContent = run.length > 1 ? `${startTime}–${endTime}` : startTime;
 
       const lines = document.createElement("span");
       lines.className = "poem-lines";
-      lines.textContent = `${lineCount(msg.text)} baris`;
+      const lc = poemLineCount(run);
+      lines.textContent =
+        run.length > 1 ? `${lc} baris · ${run.length} pesan` : `${lc} baris`;
 
       header.appendChild(badge);
       header.appendChild(time);
@@ -122,7 +197,7 @@
 
       const body = document.createElement("div");
       body.className = "poem-body";
-      body.textContent = String(msg.text ?? "");
+      body.textContent = poemText(run);
 
       card.appendChild(header);
       card.appendChild(body);
@@ -133,7 +208,7 @@
     if (shown === 0) {
       emptyEl.hidden = false;
       emptyEl.innerHTML = hasScannedOnce
-        ? `Belum ada puisi (≥ ${currentMinLines()} baris) yang cocok di <strong>#${escapeHtml(currentRoom)}</strong> saat ini.`
+        ? `Belum ada puisi (≥ ${currentMinLines()} baris) yang cocok di <strong>#${escapeHtml(currentRoom)}</strong> saat ini. Coba turunin "min. baris" atau naikin "gabung jeda" kalau puisinya dikirim baris-per-baris.`
         : `Masukin nama room lalu klik <strong>scan</strong> buat lihat puisi kontestan.`;
       listEl.appendChild(emptyEl);
     }
@@ -206,6 +281,7 @@
   });
 
   minLinesSelect.addEventListener("change", renderList);
+  gapSelect.addEventListener("change", renderList);
   searchInput.addEventListener("input", renderList);
   verifiedToggle.addEventListener("change", renderList);
 

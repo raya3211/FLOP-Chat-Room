@@ -499,7 +499,8 @@ body {
 
 .poems-toolbar label { letter-spacing: 0.03em; }
 
-#poems-min-lines {
+#poems-min-lines,
+#poems-gap {
   background: var(--panel-2);
   border: 1px solid var(--border);
   color: var(--text);
