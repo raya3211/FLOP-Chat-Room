@@ -143,7 +143,7 @@
         gameKey,
         entries,
         contributors,
-        text: entries.map((e) => e.word).join(" "),
+        text: buildPoemLines(entries),
         firstIdx: entries[0].idx,
         lastIdx: entries[entries.length - 1].idx,
         firstTs: entries[0].msg.ts,
@@ -153,6 +153,25 @@
 
     poems.sort((a, b) => a.lastIdx - b.lastIdx);
     return poems;
+  }
+
+  // Contestants seem to start a new line each time a capitalized word comes
+  // up mid-poem (the first word doesn't count, since the whole poem starts
+  // capitalized) — so "We find… New wind… We feel…" becomes three lines.
+  function buildPoemLines(entries) {
+    const lines = [];
+    let current = [];
+    entries.forEach((e, i) => {
+      const w = e.word;
+      if (i > 0 && /^[A-Z]/.test(w) && current.length) {
+        lines.push(current.join(" "));
+        current = [w];
+      } else {
+        current.push(w);
+      }
+    });
+    if (current.length) lines.push(current.join(" "));
+    return lines.join("\n");
   }
 
   // Everything that isn't a recognized structured-game message — regular
@@ -391,19 +410,76 @@
   function addMessages(messages) {
     if (!messages.length) return;
     allMessages.push(...messages);
-    if (allMessages.length > 2000) {
-      allMessages = allMessages.slice(allMessages.length - 2000);
+    if (allMessages.length > 4000) {
+      allMessages = allMessages.slice(allMessages.length - 4000);
     }
   }
 
-  async function fetchRoom({ append }) {
+  const DEEP_SCAN_MAX_PAGES = 40; // 40 * 200 = up to 8000 messages of history
+
+  // Pull everything the room still has, not just the most recent 200: page
+  // forward from seq 0 until a page comes back short (caught up to the live
+  // edge) or empty (room has nothing further). Ephemeral rooms still expire
+  // old messages server-side, so this is "as much history as still exists",
+  // not a guaranteed-complete archive.
+  async function deepScanRoom(room) {
+    let cursor = 0;
+    let collected = [];
+    let pages = 0;
+
+    while (pages < DEEP_SCAN_MAX_PAGES) {
+      pages += 1;
+      setStatus(`scanning… (${collected.length} pesan terkumpul)`, "");
+
+      const params = new URLSearchParams({
+        room,
+        limit: "200",
+        since: String(cursor),
+      });
+      const res = await fetch(`/api/lobby?${params.toString()}`);
+      if (!res.ok) throw new Error(`upstream ${res.status}`);
+      const data = await res.json();
+
+      const messages = Array.isArray(data.messages) ? data.messages : [];
+      if (!messages.length) break;
+
+      collected.push(...messages);
+
+      const nextCursor = data.last_seq;
+      if (typeof nextCursor !== "number" || nextCursor <= cursor) break;
+      cursor = nextCursor;
+
+      if (messages.length < 200) break; // fewer than a full page = caught up
+    }
+
+    return { messages: collected, lastSeq: cursor };
+  }
+
+  async function scanRoomFromStart(room) {
+    if (inFlight) return;
+    inFlight = true;
+    try {
+      const { messages, lastSeq } = await deepScanRoom(room);
+      allMessages = messages;
+      sinceSeq = lastSeq;
+      hasScannedOnce = true;
+      setStatus("live", "live");
+      renderList();
+    } catch (err) {
+      setStatus(`gagal ambil #${room} — ${err.message || err}`, "error");
+    } finally {
+      inFlight = false;
+    }
+  }
+
+  async function fetchNewOnly() {
     if (inFlight) return;
     inFlight = true;
 
     const params = new URLSearchParams({ room: currentRoom, limit: "200" });
-    if (append && sinceSeq !== null) params.set("since", String(sinceSeq));
+    if (sinceSeq !== null) params.set("since", String(sinceSeq));
 
-    setStatus(append ? "checking for new puisi…" : "scanning…", "");
+    setStatus("checking for new puisi…", "");
 
     try {
       const res = await fetch(`/api/lobby?${params.toString()}`);
@@ -411,10 +487,8 @@
       const data = await res.json();
 
       const messages = Array.isArray(data.messages) ? data.messages : [];
-      if (!append) allMessages = [];
       addMessages(messages);
       sinceSeq = data.last_seq ?? sinceSeq;
-      hasScannedOnce = true;
 
       setStatus("live", "live");
       renderList();
@@ -433,7 +507,7 @@
   function startLive() {
     stopLive();
     if (!liveToggle.checked) return;
-    liveTimer = setInterval(() => fetchRoom({ append: true }), LIVE_POLL_MS);
+    liveTimer = setInterval(fetchNewOnly, LIVE_POLL_MS);
   }
 
   function scan(room) {
@@ -444,7 +518,7 @@
     allMessages = [];
     hasScannedOnce = false;
     renderList();
-    fetchRoom({ append: false }).then(startLive);
+    scanRoomFromStart(next).then(startLive);
   }
 
   scanBtn.addEventListener("click", () => scan(roomInput.value));
